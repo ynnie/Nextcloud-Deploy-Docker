@@ -1,0 +1,75 @@
+version: '3'
+
+services:
+  db:
+    image: mariadb
+    container_name: ${DB_CONTAINER_NAME}
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    restart: always
+    volumes:
+      - ${LOCAL_DB_DIR}:/var/lib/mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD= ${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE= ${MYSQL_DATABASE}
+      - MYSQL_USER= ${MYSQL_USER}
+      - MYSQL_PASSWORD= ${MYSQL_PASSWORD}
+
+  redis:
+    image: redis:alpine
+    container_name: ${REDIS_CONTAINER_NAME}
+    restart: always
+
+  app:
+    image: nextcloud:fpm-alpine
+    container_name: ${APP_CONTAINER_NAME}
+    restart: always
+    volumes:
+      - ${LOCAL_APP_DIR}:/var/www/html
+    environment:
+      - MYSQL_HOST= db
+    depends_on:
+      - db
+      - redis
+
+  web:
+    build: ./web
+    container_name: ${WEB_CONTAINER_NAME}
+    restart: always
+    volumes:
+      - ${LOCAL_APP_DIR}:/var/www/html:ro
+    environment:
+      - VIRTUAL_HOST= ${VIRTUAL_HOST}
+    depends_on:
+      - app
+    networks:
+      - proxy_tier
+      - default
+
+  cron:
+    image: nextcloud:fpm-alpine
+    container_name: ${CRON_CONTAINER_NAME}
+    restart: always
+    volumes:
+      - ${LOCAL_APP_DIR}:/var/www/html
+    entrypoint: /cron.sh
+    depends_on:
+      - db
+      - redis
+
+  proxy:
+    build: ./proxy
+    container_name: ${PROXY_CONTAINER_NAME}
+    restart: always
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ${LOCAL_CERT_DIR}:/etc/nginx/certs:ro
+      - ${LOCAL_VHOST_DIR}:/etc/nginx/vhost.d
+      - ${LOCAL_HTML_DIR}:/usr/share/nginx/html
+      - /var/run/docker.sock:/tmp/docker.sock:ro
+    networks:
+      - proxy_tier
+
+networks:
+  proxy_tier:
