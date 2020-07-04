@@ -2,71 +2,52 @@ version: '3'
 
 services:
   db:
-    image: mariadb
-    container_name: ${DB_CONTAINER_NAME}
-    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW
+    image: postgres:alpine
+    container_name: nextcloud_db
     restart: always
     volumes:
-      - ${LOCAL_DB_DIR}:/var/lib/mysql
-    environment:
-      - MYSQL_ROOT_PASSWORD= ${MYSQL_ROOT_PASSWORD}
-      - MYSQL_DATABASE= ${MYSQL_DATABASE}
-      - MYSQL_USER= ${MYSQL_USER}
-      - MYSQL_PASSWORD= ${MYSQL_PASSWORD}
-
-  redis:
-    image: redis:alpine
-    container_name: ${REDIS_CONTAINER_NAME}
-    restart: always
+      - ${DATA_DIR_DB}:/var/lib/postgresql/data
+    env_file:
+      - db.env
 
   app:
     image: nextcloud:fpm-alpine
-    container_name: ${APP_CONTAINER_NAME}
+    container_name: nextcloud_app
     restart: always
     volumes:
-      - ${LOCAL_APP_DIR}:/var/www/html
+      - ${DATA_DIR_APP}:/var/www/html
     environment:
-      - MYSQL_HOST= db
+      - POSTGRES_HOST=db
+    env_file:
+      - db.env
     depends_on:
       - db
-      - redis
 
   web:
     build: ./web
-    container_name: ${WEB_CONTAINER_NAME}
+    container_name: nextcloud_web
     restart: always
     volumes:
-      - ${LOCAL_APP_DIR}:/var/www/html:ro
+      - ${DATA_DIR_APP}:/var/www/html:ro
     environment:
-      - VIRTUAL_HOST= ${VIRTUAL_HOST}
+      - VIRTUAL_HOST=${HOST_NAME}
     depends_on:
       - app
     networks:
       - proxy_tier
       - default
 
-  cron:
-    image: nextcloud:fpm-alpine
-    container_name: ${CRON_CONTAINER_NAME}
-    restart: always
-    volumes:
-      - ${LOCAL_APP_DIR}:/var/www/html
-    entrypoint: /cron.sh
-    depends_on:
-      - db
-      - redis
-
   proxy:
     build: ./proxy
-    container_name: ${PROXY_CONTAINER_NAME}
+    container_name: nextcloud_proxy
     restart: always
     ports:
       - 80:80
       - 443:443
     volumes:
-      - ${LOCAL_CERT_DIR}:/etc/nginx/certs:ro
-      - ${LOCAL_VHOST_DIR}:/etc/nginx/vhost.d
-      - ${LOCAL_HTML_DIR}:/usr/share/nginx/html
+      - ${DATA_DIR_CERT}:/etc/nginx/certs:ro
+      - ${DATA_DIR_VHOST}:/etc/nginx/vhost.d
+      - ${DATA_DIR_HTML}:/usr/share/nginx/html
       - /var/run/docker.sock:/tmp/docker.sock:ro
     networks:
       - proxy_tier
