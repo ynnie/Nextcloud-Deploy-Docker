@@ -1,6 +1,6 @@
 # Nextcloud-Deploy-Docker
 
-Using this project to deploy Nextcloud service (nginx-fdm-postgres) on your server. 
+Using this project to deploy Nextcloud service (nginx-fdm-postgres-redis-cron) on your server. The redis and cron are optional, installing them may improve the performance. If you don't want them, just check out the older commit.
 
 ## How to use:
 
@@ -50,7 +50,7 @@ At this point, you should be able to access your Nextcloud site with your browse
 
 # 部署Nextcloud服务
 
-使用本项目可以利用docker-compose部署Nextcloud服务（nginx-fdm-postgres）。
+使用本项目可以利用docker-compose部署Nextcloud服务（nginx-fdm-postgres-redis-cron）。 其中，redis和cron是可选项目，不配置这两项Nextcloud也可以正常工作，但是配置这两项对性能会有提升。如果你不想配置它们，可以check out之前的commit。
 
 ## 使用方法:
 

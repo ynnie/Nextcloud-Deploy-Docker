@@ -9,6 +9,11 @@ services:
       - ${DATA_DIR_DB}:/var/lib/postgresql/data
     env_file:
       - db.env
+      
+  redis:
+    image: redis:alpine
+    container_name: nextcloud_redis
+    restart: always
 
   app:
     image: nextcloud:fpm-alpine
@@ -18,10 +23,12 @@ services:
       - ${DATA_DIR_APP}:/var/www/html
     environment:
       - POSTGRES_HOST=db
+      - REDIS_HOST=redis
     env_file:
       - db.env
     depends_on:
       - db
+      - redis
 
   web:
     build: ./web
@@ -51,6 +58,17 @@ services:
       - /var/run/docker.sock:/tmp/docker.sock:ro
     networks:
       - proxy_tier
+      
+  cron:
+    image: nextcloud:fpm-alpine
+    container_name: nextcloud_cron
+    restart: always
+    volumes:
+      - ${DATA_DIR_APP}:/var/www/html
+    entrypoint: /cron.sh
+    depends_on:
+      - db
+      - redis
 
 networks:
   proxy_tier:
