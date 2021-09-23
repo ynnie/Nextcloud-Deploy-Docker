@@ -3,7 +3,7 @@ version: '3'
 services:
   db:
     image: postgres:alpine
-    container_name: nextcloud_db
+    container_name: nc_db
     restart: always
     volumes:
       - ${DATA_DIR_DB}:/var/lib/postgresql/data
@@ -12,12 +12,12 @@ services:
       
   redis:
     image: redis:alpine
-    container_name: nextcloud_redis
+    container_name: nc_redis
     restart: always
 
   app:
     image: nextcloud:fpm-alpine
-    container_name: nextcloud_app
+    container_name: nc_app
     restart: always
     volumes:
       - ${DATA_DIR_APP}:/var/www/html
@@ -32,7 +32,7 @@ services:
 
   web:
     build: ./web
-    container_name: nextcloud_web
+    container_name: nc_web
     restart: always
     volumes:
       - ${DATA_DIR_APP}:/var/www/html:ro
@@ -46,7 +46,7 @@ services:
 
   proxy:
     build: ./proxy
-    container_name: nextcloud_proxy
+    container_name: nc_proxy
     restart: always
     ports:
       - 80:80
@@ -61,7 +61,7 @@ services:
       
   cron:
     image: nextcloud:fpm-alpine
-    container_name: nextcloud_cron
+    container_name: nc_cron
     restart: always
     volumes:
       - ${DATA_DIR_APP}:/var/www/html
